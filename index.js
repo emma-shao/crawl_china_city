@@ -1,3 +1,4 @@
+console.log('开始时间(ms): ' + Date.now());
 const request = require('request');
 const settings = {
     host: "127.0.0.1",
@@ -12,62 +13,40 @@ const table = 'k_region';
 var shengUrl = 'http://cnis.7east.com/widget.do?type=service&ajax=yes&action=cnislist';
 var subUrl = 'http://cnis.7east.com/widget.do?type=service&action=cnischildlist&a=2&ajax=yes&pid=';
 
-
 request.get(shengUrl, function(error, response, body) {
     if (response && response.statusCode == 200) {
-        console.log('省级获取');
         var json = JSON.parse(body);
         if (json.rows.length) {
             for (var i=0; i<json.rows.length; i++) {
                 var layer1 = json.rows[i];
-                insertRegion(layer1);
+                updateOrCreate(layer1);
 
                 // 获取对应的下辖市
                 request.get(subUrl + layer1.region_id, function(error, response, body){
                     if (response && response.statusCode == 200) {
-                        console.log('地级市获取');
                         var json = JSON.parse(body);
                         if (json.rows.length) {
                             for (var i=0; i<json.rows.length; i++) {
                                 var layer2 = json.rows[i];
-                                insertRegion(layer2);
+                                updateOrCreate(layer2);
 
                                 // 获取对应的下辖区
-                                request.get(subUrl + layer2.region_id, function(error, response, body){
-                                    if (response && response.statusCode == 200) {
-                                        console.log('区级获取');
-                                        var json = JSON.parse(body);
-                                        if (json.rows.length) {
-                                            for (var i=0; i<json.rows.length; i++) {
-                                                var layer3 = json.rows[i];
-                                                insertRegion(layer3);
-                                            }
-                                        }
-                                    } else {
-                                        console.log('errror:', error);
-                                        console.log('statusCode:', response && response.statusCode);
-                                        console.log('body:', body);
-                                    }
-                                });
+                                getUrl(layer2);
                             }
                         }
                     } else {
-                        console.log('errror:', error);
-                        console.log('statusCode:', response && response.statusCode);
-                        console.log('body:', body);
+                        console.log(layer1 + '下的市级获取errror:', error);
                     }
                 });
             }
         }
     } else {
-        console.log('errror:', error);
-        console.log('statusCode:', response && response.statusCode);
-        console.log('body:', body);
+        console.log('省级获取error:', error);
     }
 });
 
 // 插入地区
-function insertRegion(row) {
+function updateOrCreate(row) {
     name = row.name.replace(/市$/, '');
     fullspell = row.fullspell.replace(/_shi$/, '');
 
@@ -84,11 +63,51 @@ function insertRegion(row) {
         layer: row.layer,
         local_name: row.local_name
     };
-    qb.insert(table, data, (err, res)=>{
-        if (err) { // 如果是重复的错误，可进行更新
+
+    qb.select('id').where({id: data.id}).get(table, (err,res)=>{
+        if(err) {
+            console.log(data);
             throw err;
-        } else { // 插入成功
-            // console.log(res.affectedRows + '条记录插入成功');
+        }
+        if (res.length) { // 存在进行更新
+            qb.update(table, data, {id: data.id}, (err, res)=>{
+                if(err) {
+                    console.log(data);
+                    throw err;
+                } else {
+                    console.log(data.id + '更新 时间(ms):' + Date.now());
+                }
+            });
+        } else { // 不存在进行新增
+            qb.insert(table, data, (err, res)=>{
+                if(err) {
+                    console.log(data);
+                    throw err;
+                } else {
+                    console.log(data.id + '新增 时间(ms):' + Date.now());
+                }
+            });
+        }
+    });
+}
+
+/**
+ * 获取市级城市下的区级信息
+ * @param  json layer2 地级市信息
+ * @return 无
+ */
+function getUrl(layer2) {
+    request.get(subUrl + layer2.region_id, function(error, response, body){
+        if (response && response.statusCode == 200) {
+            var json = JSON.parse(body);
+            if (json.rows.length) {
+                for (var i=0; i<json.rows.length; i++) {
+                    var layer3 = json.rows[i];
+                    updateOrCreate(layer3);
+                }
+            }
+        } else {
+            console.log( layer2 + '下的区级获取errror:', error);
         }
     });
 }
