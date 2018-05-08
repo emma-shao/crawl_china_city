@@ -19,6 +19,8 @@ cnpm install request
 cnpm install mysql
 cnpm install node-querybuilder
 
+### configure
+> 需要数据库连接配置，connection.json
 
 ### 特殊说明
 地级市 的地名由于行政划分后缀一般有市，为了网站友好展示，地级市中包含的尾部市去除

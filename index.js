@@ -1,12 +1,8 @@
 console.log('开始时间(ms): ' + Date.now());
 const request = require('request');
-const settings = {
-    host: "127.0.0.1",
-    user: "emma",
-    password: "shaoruijuan",
-    database: "car"
-};
-const qb = require('node-querybuilder').QueryBuilder(settings, 'mysql');
+const settings = require('./connection.json');
+
+const qb = require('node-querybuilder').QueryBuilder(require('./connection.json'), 'mysql');
 const table = 'k_region';
 
 // 爬取省级
