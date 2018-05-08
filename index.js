@@ -20,7 +20,6 @@ request.get(shengUrl, function(error, response, body) {
         if (json.rows.length) {
             for (var i=0; i<json.rows.length; i++) {
                 var layer1 = json.rows[i];
-                console.log('省级：插入数据表')
                 insertRegion(layer1);
 
                 // 获取对应的下辖市
