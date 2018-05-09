@@ -16,7 +16,9 @@ sql建表语句如 region.sql
 ### installation
 *依赖安装*
 > cnpm install request
+> 
 > cnpm install mysql
+> 
 > cnpm install node-querybuilder
 
 ### configure
